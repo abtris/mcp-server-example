@@ -93,3 +93,47 @@ Edit `policy.rego` to customize:
 - Allowed domains for `http_get`
 - Prohibited keywords for `echo`
 - Add new policy rules for additional tools
+
+## Development
+
+### Continuous Integration
+
+This project uses GitHub Actions for CI/CD. The workflow automatically:
+
+- **Validates Go build** across multiple Go versions (1.23, 1.24, 1.25)
+- **Runs tests** with race detection and coverage reporting
+- **Performs code quality checks**:
+  - `go vet` - examines Go source code and reports suspicious constructs
+  - `go fmt` - checks code formatting
+  - `staticcheck` - advanced static analysis
+
+The CI workflow runs on:
+- Push to `main` or `develop` branches
+- Pull requests targeting `main` or `develop` branches
+
+### Running Tests Locally
+
+```bash
+# Run all tests
+go test -v ./...
+
+# Run tests with race detection and coverage
+go test -v -race -coverprofile=coverage.out ./...
+
+# View coverage report
+go tool cover -html=coverage.out
+```
+
+### Code Quality Checks
+
+```bash
+# Run go vet
+go vet ./...
+
+# Check formatting
+gofmt -s -l .
+
+# Install and run staticcheck
+go install honnef.co/go/tools/cmd/staticcheck@latest
+staticcheck ./...
+```
