@@ -1,4 +1,4 @@
-package server
+package mcp_server
 
 import (
 	"context"
@@ -7,18 +7,20 @@ import (
 	"github.com/abtris/mcp-server-2025/internal/config"
 	"github.com/abtris/mcp-server-2025/internal/policy"
 	"github.com/abtris/mcp-server-2025/internal/tools"
+	"github.com/abtris/mcp-server-2025/pkg/metrics"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // Server wraps the MCP server with configuration
-type Server struct {
+type MCPServer struct {
 	config   *config.ServerConfig
 	enforcer *policy.Enforcer
+	metrics  *metrics.Metrics
 	mcp      *mcp.Server
 }
 
 // New creates a new MCP server with the given configuration and policy enforcer
-func New(cfg *config.ServerConfig, enforcer *policy.Enforcer) *Server {
+func New(cfg *config.ServerConfig, enforcer *policy.Enforcer, m *metrics.Metrics) *MCPServer {
 	mcpServer := mcp.NewServer(&mcp.Implementation{
 		Name:    cfg.Server.Name,
 		Version: cfg.Server.Version,
@@ -26,15 +28,16 @@ func New(cfg *config.ServerConfig, enforcer *policy.Enforcer) *Server {
 
 	slog.Info("Creating MCP server", "name", cfg.Server.Name, "version", cfg.Server.Version)
 
-	return &Server{
+	return &MCPServer{
 		config:   cfg,
 		enforcer: enforcer,
+		metrics:  m,
 		mcp:      mcpServer,
 	}
 }
 
 // RegisterTools registers all tools from the configuration
-func (s *Server) RegisterTools() {
+func (s *MCPServer) RegisterTools() {
 	for _, tool := range s.config.Tools {
 		slog.Info("Registering tool", "name", tool.Name, "handler", tool.Handler)
 
@@ -56,7 +59,7 @@ func (s *Server) RegisterTools() {
 }
 
 // Run starts the MCP server with stdio transport
-func (s *Server) Run(ctx context.Context) error {
+func (s *MCPServer) Run(ctx context.Context) error {
 	slog.Info("Starting Secure MCP Server")
 	return s.mcp.Run(ctx, &mcp.StdioTransport{})
 }

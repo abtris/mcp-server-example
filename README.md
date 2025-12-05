@@ -38,7 +38,7 @@ The project follows Go best practices with a clear separation of concerns:
 │   ├── policy/                  # Policy enforcement
 │   │   ├── policy.go
 │   │   └── policy_test.go
-│   ├── server/                  # MCP server implementation
+│   ├── mcp_server/              # MCP server implementation
 │   │   └── server.go
 │   └── tools/                   # Tool definitions and handlers
 │       ├── tools.go
@@ -118,6 +118,7 @@ go run main.go -h
 - `-policy` - Path to the OPA policy file (default: `policy.rego`)
 - `-log-format` - Log format: `text` or `json` (default: `text`)
 - `-log-level` - Log level: `debug`, `info`, `warn`, `error` (default: `info`)
+- `-metrics-port` - Port for Prometheus metrics endpoint (default: `9090`)
 
 The server will start and listen for MCP protocol messages on stdin/stdout.
 
@@ -157,6 +158,57 @@ The server uses structured logging with `slog` (Go's standard structured logging
 # JSON format with debug level
 ./mcp-server-2025 -log-format json -log-level debug
 ```
+
+## Metrics
+
+The server exposes Prometheus metrics on an HTTP endpoint for monitoring tool calls, policy evaluations, and performance.
+
+### Metrics Endpoint
+
+By default, metrics are available at `http://localhost:9090/metrics`. You can change the port with the `-metrics-port` flag.
+
+```bash
+# Start server with custom metrics port
+./mcp-server-2025 -metrics-port 8080
+
+# In another terminal, query metrics
+curl http://localhost:8080/metrics
+```
+
+### Available Metrics
+
+**Request Metrics:**
+- `mcp_requests_total` - Total number of MCP requests received
+
+**Tool Call Metrics:**
+- `mcp_tool_calls_total{tool="..."}` - Total number of tool calls by tool name
+- `mcp_tool_call_duration_seconds{tool="..."}` - Duration of tool calls in seconds (histogram)
+
+**Policy Engine Metrics:**
+- `mcp_policy_evaluations_total{tool="...", result="allowed|denied"}` - Total policy evaluations by result
+- `mcp_policy_evaluation_duration_seconds` - Duration of policy evaluations in seconds (histogram)
+- `mcp_policy_denials_total{tool="...", reason="..."}` - Total policy denials by tool and reason
+- `mcp_policy_errors_total` - Total number of policy evaluation errors
+
+### Example Prometheus Queries
+
+```promql
+# Rate of tool calls per second
+rate(mcp_tool_calls_total[5m])
+
+# Policy denial rate
+rate(mcp_policy_evaluations_total{result="denied"}[5m])
+
+# Average policy evaluation time
+rate(mcp_policy_evaluation_duration_seconds_sum[5m]) / rate(mcp_policy_evaluation_duration_seconds_count[5m])
+
+# 95th percentile tool call duration
+histogram_quantile(0.95, rate(mcp_tool_call_duration_seconds_bucket[5m]))
+```
+
+### Grafana Dashboard
+
+You can create a Grafana dashboard to visualize these metrics. Import the metrics into Prometheus and configure Grafana to query your Prometheus instance.
 
 ## Configuration
 

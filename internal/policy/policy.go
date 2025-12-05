@@ -6,18 +6,21 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
+	"github.com/abtris/mcp-server-2025/pkg/metrics"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/open-policy-agent/opa/rego"
 )
 
 // Enforcer wraps the OPA policy engine for evaluating tool access
 type Enforcer struct {
-	query rego.PreparedEvalQuery
+	query   rego.PreparedEvalQuery
+	metrics *metrics.Metrics
 }
 
 // NewEnforcer loads the Rego file and prepares the OPA engine
-func NewEnforcer(regoFile string) (*Enforcer, error) {
+func NewEnforcer(regoFile string, m *metrics.Metrics) (*Enforcer, error) {
 	ctx := context.Background()
 
 	bs, err := os.ReadFile(regoFile)
@@ -37,7 +40,10 @@ func NewEnforcer(regoFile string) (*Enforcer, error) {
 		return nil, fmt.Errorf("failed to prepare rego: %w", err)
 	}
 
-	return &Enforcer{query: query}, nil
+	return &Enforcer{
+		query:   query,
+		metrics: m,
+	}, nil
 }
 
 // Enforce is a Generic Middleware for the official SDK.
@@ -51,6 +57,12 @@ func Enforce[In any, Out any](
 
 	return func(ctx context.Context, request *mcp.CallToolRequest, input In) (*mcp.CallToolResult, Out, error) {
 		var zeroOut Out // Zero value for Output to return on blocked requests
+
+		// Record the request
+		if pe.metrics != nil {
+			pe.metrics.RecordRequest()
+			pe.metrics.RecordToolCall(toolName)
+		}
 
 		// 1. Convert Typed Input to Map for OPA
 		// OPA requires map[string]interface{}, but our Input is a struct.
@@ -69,13 +81,24 @@ func Enforce[In any, Out any](
 		}
 
 		// 2. Evaluate Policy
+		startTime := time.Now()
 		results, err := pe.query.Eval(ctx, rego.EvalInput(opaInput))
+		evalDuration := time.Since(startTime)
+
 		if err != nil {
 			// Fail closed if policy engine fails
+			if pe.metrics != nil {
+				pe.metrics.RecordPolicyError()
+			}
+			slog.Error("Policy engine error", "tool", toolName, "error", err)
 			return ErrorResult("Policy Engine Error: " + err.Error()), zeroOut, nil
 		}
 
 		if len(results) == 0 {
+			if pe.metrics != nil {
+				pe.metrics.RecordPolicyError()
+			}
+			slog.Error("Policy engine returned no results", "tool", toolName)
 			return ErrorResult("Policy Engine returned no results"), zeroOut, nil
 		}
 
@@ -88,16 +111,35 @@ func Enforce[In any, Out any](
 			if r, exists := bindings["reason"]; exists && r != nil {
 				reason = fmt.Sprintf("Blocked: %v", r)
 			}
+
+			// Record policy denial
+			if pe.metrics != nil {
+				pe.metrics.RecordPolicyEvaluation(toolName, false, reason, evalDuration.Seconds())
+			}
+
 			slog.Warn("Policy blocked action", "tool", toolName, "reason", reason)
 
 			// Return an MCP "Error" Result. This tells the LLM the tool call failed.
 			return ErrorResult(reason), zeroOut, nil
 		}
 
+		// Record policy approval
+		if pe.metrics != nil {
+			pe.metrics.RecordPolicyEvaluation(toolName, true, "", evalDuration.Seconds())
+		}
+
 		slog.Info("Policy allowed action", "tool", toolName)
 
 		// 4. If Allowed, execute the actual tool logic
-		return handler(ctx, request, input)
+		toolStartTime := time.Now()
+		result, output, err := handler(ctx, request, input)
+		toolDuration := time.Since(toolStartTime)
+
+		if pe.metrics != nil {
+			pe.metrics.RecordToolDuration(toolName, toolDuration.Seconds())
+		}
+
+		return result, output, err
 	}
 }
 
