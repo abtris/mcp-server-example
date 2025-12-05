@@ -3,46 +3,53 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/abtris/mcp-server-2025/internal/config"
+	"github.com/abtris/mcp-server-2025/internal/policy"
+	"github.com/abtris/mcp-server-2025/internal/server"
+	"github.com/abtris/mcp-server-2025/pkg/logger"
 )
 
 func main() {
 	// Parse command line flags
 	policyFile := flag.String("policy", "policy.rego", "Path to the OPA policy file")
+	configFile := flag.String("config", "config.json", "Path to the server configuration file")
+	logFormat := flag.String("log-format", "text", "Log format: text or json")
+	logLevel := flag.String("log-level", "info", "Log level: debug, info, warn, error")
 	flag.Parse()
 
-	// Initialize Policy Engine
-	log.Printf("Loading policy from: %s", *policyFile)
-	enforcer, err := NewPolicyEnforcer(*policyFile)
+	// Initialize structured logger
+	log := logger.New(logger.Config{
+		Format: *logFormat,
+		Level:  *logLevel,
+	})
+	logger.SetDefault(log)
+
+	// Load Configuration
+	slog.Info("Loading configuration", "file", *configFile)
+	cfg, err := config.Load(*configFile)
 	if err != nil {
-		log.Fatalf("Failed to start policy engine: %v", err)
+		slog.Error("Failed to load configuration", "error", err)
+		os.Exit(1)
 	}
 
-	// Create MCP Server
-	s := mcp.NewServer(&mcp.Implementation{
-		Name:    "SecureGoMCP",
-		Version: "1.0.0",
-	}, nil)
+	// Initialize Policy Engine
+	slog.Info("Loading policy", "file", *policyFile)
+	enforcer, err := policy.NewEnforcer(*policyFile)
+	if err != nil {
+		slog.Error("Failed to start policy engine", "error", err)
+		os.Exit(1)
+	}
 
-	// Register "http_get" with Policy Middleware
-	mcp.AddTool(s, &mcp.Tool{
-		Name:        "http_get",
-		Description: "Fetch a website. Subject to strict domain policies.",
-	}, Enforce(enforcer, "http_get", safeGetHandler))
-
-	// Register "echo" with Policy Middleware
-	mcp.AddTool(s, &mcp.Tool{
-		Name:        "echo",
-		Description: "Echo a message back.",
-	}, Enforce(enforcer, "echo", echoHandler))
+	// Create and configure MCP Server
+	srv := server.New(cfg, enforcer)
+	srv.RegisterTools()
 
 	// Start the Server (Stdio)
-	fmt.Fprintln(os.Stderr, "Starting Secure MCP Server (Official SDK)...")
-	if err := s.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
-		fmt.Fprintf(os.Stderr, "Server error: %v\n", err)
+	if err := srv.Run(context.Background()); err != nil {
+		slog.Error("Server error", "error", err)
+		os.Exit(1)
 	}
 }

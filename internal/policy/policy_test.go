@@ -1,12 +1,12 @@
-package main
+package policy
 
 import (
 	"testing"
 )
 
-func TestPolicyEnforcer_Creation(t *testing.T) {
+func TestNewEnforcer_Creation(t *testing.T) {
 	// Test that we can create a policy enforcer with a valid policy file
-	enforcer, err := NewPolicyEnforcer("policy.rego")
+	enforcer, err := NewEnforcer("../../policy.rego")
 	if err != nil {
 		t.Fatalf("Failed to create policy enforcer: %v", err)
 	}
@@ -15,9 +15,9 @@ func TestPolicyEnforcer_Creation(t *testing.T) {
 	}
 }
 
-func TestPolicyEnforcer_InvalidFile(t *testing.T) {
+func TestNewEnforcer_InvalidFile(t *testing.T) {
 	// Test that we get an error with an invalid policy file
-	_, err := NewPolicyEnforcer("nonexistent.rego")
+	_, err := NewEnforcer("nonexistent.rego")
 	if err == nil {
 		t.Fatal("Expected error for nonexistent policy file")
 	}

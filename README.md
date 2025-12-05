@@ -8,20 +8,48 @@ This project demonstrates a **Model Context Protocol (MCP)** server written usin
 - **SDK**: `github.com/modelcontextprotocol/go-sdk` v1.1.0
 - **Policy Engine**: OPA (`github.com/open-policy-agent/opa` v0.68.0) running in-process
 - **Go Version**: 1.25.5
+- **Logging**: Structured logging with `log/slog` (JSON and text formats)
+
+### Package Organization
+
+The project follows Go best practices with a clear separation of concerns:
+
+- **`main.go`** - Application entry point, CLI flag parsing, and initialization
+- **`internal/`** - Internal packages (not importable by external projects)
+  - **`config/`** - Configuration loading and management
+  - **`policy/`** - OPA policy enforcement and middleware
+  - **`server/`** - MCP server setup and tool registration
+  - **`tools/`** - Tool implementations (http_get, echo)
+- **`pkg/`** - Public packages (can be imported by other projects)
+  - **`logger/`** - Structured logging configuration
 
 ### Project Structure
 
 ```
 .
-├── main.go           # Server initialization and setup
-├── policy.go         # Policy enforcer and OPA middleware
-├── tools.go          # Tool definitions and handlers
-├── policy.rego       # OPA policy rules
-├── policy_test.go    # Tests for policy enforcer
-├── tools_test.go     # Tests for tools
+├── main.go                      # Application entry point
+├── config.json                  # Server and tool configuration
+├── config-minimal.json          # Example minimal configuration
+├── policy.rego                  # OPA policy rules
+├── internal/                    # Internal packages
+│   ├── config/                  # Configuration management
+│   │   ├── config.go
+│   │   └── config_test.go
+│   ├── policy/                  # Policy enforcement
+│   │   ├── policy.go
+│   │   └── policy_test.go
+│   ├── server/                  # MCP server implementation
+│   │   └── server.go
+│   └── tools/                   # Tool definitions and handlers
+│       ├── tools.go
+│       └── tools_test.go
+├── pkg/                         # Public packages
+│   └── logger/                  # Structured logging
+│       ├── logger.go
+│       └── logger_test.go
 └── .github/
     └── workflows/
-        └── go.yml    # CI/CD workflow
+        └── go.yml               # CI/CD workflow
 ```
 
 ## How It Works
@@ -46,6 +74,8 @@ The module is already initialized. To install dependencies:
 go mod tidy
 ```
 
+(Optional) Customize the configuration by editing `config.json` to enable/disable tools or change server settings.
+
 ## Running the Server
 
 ### Basic Usage
@@ -64,14 +94,106 @@ go run main.go
 # Specify a custom policy file
 go run main.go -policy /path/to/custom-policy.rego
 
+# Specify a custom configuration file
+go run main.go -config /path/to/custom-config.json
+
+# Use both custom config and policy
+go run main.go -config config-minimal.json -policy policy.rego
+
+# Use JSON logging for production
+go run main.go -log-format json -log-level info
+
+# Debug mode with detailed logging
+go run main.go -log-level debug
+
+# Quiet mode (warnings and errors only)
+go run main.go -log-level warn
+
 # Show help
 go run main.go -h
 ```
 
 **Available flags:**
+- `-config` - Path to the server configuration file (default: `config.json`)
 - `-policy` - Path to the OPA policy file (default: `policy.rego`)
+- `-log-format` - Log format: `text` or `json` (default: `text`)
+- `-log-level` - Log level: `debug`, `info`, `warn`, `error` (default: `info`)
 
 The server will start and listen for MCP protocol messages on stdin/stdout.
+
+### Logging Options
+
+The server uses structured logging with `slog` (Go's standard structured logging library).
+
+**Text format (default):**
+```bash
+./mcp-server-2025
+# Output:
+# time=2025-12-05T15:20:24.004+01:00 level=INFO msg="Loading configuration" file=config.json
+# time=2025-12-05T15:20:24.006+01:00 level=INFO msg="Creating MCP server" name=SecureGoMCP version=1.0.0
+```
+
+**JSON format (for log aggregation):**
+```bash
+./mcp-server-2025 -log-format json
+# Output:
+# {"time":"2025-12-05T15:21:15.131+01:00","level":"INFO","msg":"Loading configuration","file":"config.json"}
+# {"time":"2025-12-05T15:21:15.133+01:00","level":"INFO","msg":"Creating MCP server","name":"SecureGoMCP","version":"1.0.0"}
+```
+
+**Log levels:**
+- `debug` - Detailed debugging information
+- `info` - General informational messages (default)
+- `warn` - Warning messages and policy blocks
+- `error` - Error messages only
+
+```bash
+# Only show warnings and errors
+./mcp-server-2025 -log-level warn
+
+# Show all debug information
+./mcp-server-2025 -log-level debug
+
+# JSON format with debug level
+./mcp-server-2025 -log-format json -log-level debug
+```
+
+## Configuration
+
+### Server Configuration (`config.json`)
+
+The server configuration is defined in a JSON file that specifies server metadata and available tools:
+
+```json
+{
+  "server": {
+    "name": "SecureGoMCP",
+    "version": "1.0.0"
+  },
+  "tools": [
+    {
+      "name": "http_get",
+      "description": "Fetch a website. Subject to strict domain policies.",
+      "handler": "http_get"
+    },
+    {
+      "name": "echo",
+      "description": "Echo a message back.",
+      "handler": "echo"
+    }
+  ]
+}
+```
+
+**Configuration fields:**
+- `server.name` - Name of the MCP server
+- `server.version` - Version of the MCP server
+- `tools` - Array of tool definitions
+  - `name` - Tool name (must be unique)
+  - `description` - Tool description shown to clients
+  - `handler` - Handler function name (`http_get` or `echo`)
+
+You can create custom configuration files to enable/disable tools or change server metadata without modifying code.
 
 ## Testing with MCP Inspector
 

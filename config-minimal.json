@@ -1,0 +1,14 @@
+{
+  "server": {
+    "name": "MinimalMCP",
+    "version": "0.5.0"
+  },
+  "tools": [
+    {
+      "name": "echo",
+      "description": "Simple echo tool for testing.",
+      "handler": "echo"
+    }
+  ]
+}
+
