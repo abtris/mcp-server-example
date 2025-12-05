@@ -9,6 +9,21 @@ This project demonstrates a **Model Context Protocol (MCP)** server written usin
 - **Policy Engine**: OPA (`github.com/open-policy-agent/opa` v0.68.0) running in-process
 - **Go Version**: 1.25.5
 
+### Project Structure
+
+```
+.
+├── main.go           # Server initialization and setup
+├── policy.go         # Policy enforcer and OPA middleware
+├── tools.go          # Tool definitions and handlers
+├── policy.rego       # OPA policy rules
+├── policy_test.go    # Tests for policy enforcer
+├── tools_test.go     # Tests for tools
+└── .github/
+    └── workflows/
+        └── go.yml    # CI/CD workflow
+```
+
 ## How It Works
 
 When an LLM calls a tool (e.g., `http_get`):
@@ -33,9 +48,28 @@ go mod tidy
 
 ## Running the Server
 
+### Basic Usage
+
 ```bash
+# Run with default policy file (policy.rego)
 go run main.go
+
+# Or use the compiled binary
+./mcp-server-2025
 ```
+
+### Command Line Options
+
+```bash
+# Specify a custom policy file
+go run main.go -policy /path/to/custom-policy.rego
+
+# Show help
+go run main.go -h
+```
+
+**Available flags:**
+- `-policy` - Path to the OPA policy file (default: `policy.rego`)
 
 The server will start and listen for MCP protocol messages on stdin/stdout.
 
@@ -44,7 +78,11 @@ The server will start and listen for MCP protocol messages on stdin/stdout.
 You can use the official MCP Inspector to test the policies:
 
 ```bash
+# With default policy
 npx @modelcontextprotocol/inspector go run main.go
+
+# With custom policy
+npx @modelcontextprotocol/inspector go run main.go -policy custom-policy.rego
 ```
 
 ## Test Scenarios
