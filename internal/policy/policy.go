@@ -10,7 +10,7 @@ import (
 
 	"github.com/abtris/mcp-server-2025/pkg/metrics"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/open-policy-agent/opa/rego"
+	"github.com/open-policy-agent/opa/v1/rego"
 )
 
 // Enforcer wraps the OPA policy engine for evaluating tool access
