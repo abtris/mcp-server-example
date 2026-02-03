@@ -351,6 +351,15 @@ go test -v -race -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
 ```
 
+### Policy Tests (OPA)
+
+The OPA policy has unit tests in `policy_test.rego`.
+
+```bash
+# Run policy tests
+opa test -v policy.rego policy_test.rego
+```
+
 ### Code Quality Checks
 
 ```bash

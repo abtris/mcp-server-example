@@ -46,6 +46,14 @@ jobs:
       - name: Run tests
         run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
+      - name: Set up OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+
+      - name: Run OPA policy tests
+        run: opa test -v policy.rego policy_test.rego
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
