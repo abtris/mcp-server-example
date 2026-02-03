@@ -306,6 +306,16 @@ Edit `policy.rego` to customize:
 - Prohibited keywords for `echo`
 - Add new policy rules for additional tools
 
+## Policy Library Examples
+
+See `examples/policies/` for ready-to-copy policy patterns, including:
+- Tool allowlists and argument constraints
+- Role-based access control
+- Rate limiting (with external data or input context)
+
+Each example includes notes about any extra input fields you may need to pass
+to OPA.
+
 ## Development
 
 ### Continuous Integration
