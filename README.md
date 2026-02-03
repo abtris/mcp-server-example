@@ -6,7 +6,7 @@ This project demonstrates a **Model Context Protocol (MCP)** server written usin
 
 - **Transport**: JSON-RPC over Stdio
 - **SDK**: `github.com/modelcontextprotocol/go-sdk` v1.1.0
-- **Policy Engine**: OPA (`github.com/open-policy-agent/opa` v0.68.0) running in-process
+- **Policy Engine**: OPA (`github.com/open-policy-agent/opa` v1.4.0) running in-process
 - **Go Version**: 1.25.5
 - **Logging**: Structured logging with `log/slog` (JSON and text formats)
 
