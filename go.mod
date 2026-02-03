@@ -1,6 +1,6 @@
 module github.com/abtris/mcp-server-2025
 
-go 1.25.5
+go 1.25.6
 
 require (
 	github.com/modelcontextprotocol/go-sdk v1.1.0
