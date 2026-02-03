@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"testing"
 )
 
@@ -49,5 +50,33 @@ func TestLoad_InvalidFile(t *testing.T) {
 	_, err := Load("nonexistent.json")
 	if err == nil {
 		t.Fatal("Expected error for nonexistent config file")
+	}
+}
+
+func TestLoad_InvalidSchema(t *testing.T) {
+	// Missing server.name and tool handler should fail schema validation
+	invalidJSON := `{
+  "server": { "version": "1.0.0" },
+  "tools": [
+    { "name": "echo", "description": "Echo a message back." }
+  ]
+}`
+
+	tmpFile, err := os.CreateTemp("", "invalid-config-*.json")
+	if err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	if _, err := tmpFile.WriteString(invalidJSON); err != nil {
+		t.Fatalf("Failed to write temp file: %v", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		t.Fatalf("Failed to close temp file: %v", err)
+	}
+
+	_, err = Load(tmpFile.Name())
+	if err == nil {
+		t.Fatal("Expected error for invalid config schema")
 	}
 }
