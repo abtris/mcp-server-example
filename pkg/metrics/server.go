@@ -48,4 +48,3 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	slog.Info("Shutting down metrics server")
 	return s.server.Shutdown(ctx)
 }
-
