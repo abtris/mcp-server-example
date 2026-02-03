@@ -327,7 +327,7 @@ to OPA.
 
 This project uses GitHub Actions for CI/CD. The workflow automatically:
 
-- **Validates Go build** across multiple Go versions (1.25.6, 1.26.x)
+- **Validates Go build** with Go 1.25.6
 - **Runs tests** with race detection and coverage reporting
 - **Performs code quality checks**:
   - `go vet` - examines Go source code and reports suspicious constructs
