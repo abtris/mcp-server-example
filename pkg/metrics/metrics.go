@@ -96,4 +96,3 @@ func (m *Metrics) RecordPolicyError() {
 func (m *Metrics) RecordToolDuration(toolName string, durationSeconds float64) {
 	m.ToolCallDuration.WithLabelValues(toolName).Observe(durationSeconds)
 }
-
