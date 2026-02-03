@@ -247,8 +247,10 @@ The server configuration is defined in a JSON file that specifies server metadat
 
 You can create custom configuration files to enable/disable tools or change server metadata without modifying code.
 
-The config file is validated at startup against `config.schema.json` with
-clear validation errors if required fields are missing or malformed.
+The config file is validated at startup against `internal/config/config.schema.json`
+(embedded into the binary), with clear validation errors if required fields
+are missing or malformed. You can also place a `config.schema.json` next to
+your config file to override the embedded schema.
 
 ## Testing with MCP Inspector
 

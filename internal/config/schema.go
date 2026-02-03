@@ -1,57 +1,13 @@
 package config
 
 import (
+	"embed"
 	"os"
 	"path/filepath"
 )
 
-const defaultSchema = `{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Secure MCP Server Config",
-  "type": "object",
-  "additionalProperties": false,
-  "required": ["server", "tools"],
-  "properties": {
-    "server": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["name", "version"],
-      "properties": {
-        "name": {
-          "type": "string",
-          "minLength": 1
-        },
-        "version": {
-          "type": "string",
-          "minLength": 1
-        }
-      }
-    },
-    "tools": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["name", "description", "handler"],
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "description": {
-            "type": "string",
-            "minLength": 1
-          },
-          "handler": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
-      }
-    }
-  }
-}`
+//go:embed config.schema.json
+var embeddedSchema embed.FS
 
 func readSchemaBytes(configFile string) ([]byte, error) {
 	candidates := []string{
@@ -65,5 +21,5 @@ func readSchemaBytes(configFile string) ([]byte, error) {
 		}
 	}
 
-	return []byte(defaultSchema), nil
+	return embeddedSchema.ReadFile("config.schema.json")
 }
