@@ -4,7 +4,7 @@ go 1.25.6
 
 require (
 	github.com/modelcontextprotocol/go-sdk v1.4.1
-	github.com/open-policy-agent/opa v1.14.1
+	github.com/open-policy-agent/opa v1.15.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 )
