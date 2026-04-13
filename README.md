@@ -5,9 +5,8 @@ This project demonstrates a **Model Context Protocol (MCP)** server written usin
 ## Architecture
 
 - **Transport**: JSON-RPC over Stdio
-- **SDK**: `github.com/modelcontextprotocol/go-sdk` v1.1.0
-- **Policy Engine**: OPA (`github.com/open-policy-agent/opa` v1.4.0) running in-process
-- **Go Version**: 1.25.6
+- **SDK**: `github.com/modelcontextprotocol/go-sdk`
+- **Policy Engine**: OPA (`github.com/open-policy-agent/opa`) running in-process
 - **Logging**: Structured logging with `log/slog` (JSON and text formats)
 
 ### Package Organization
@@ -64,7 +63,7 @@ When an LLM calls a tool (e.g., `http_get`):
 
 ## Prerequisites
 
-- **Go 1.23+** (tested with Go 1.25.6)
+- **Go** (see `go.mod` for minimum version)
 
 ## Setup
 
@@ -327,7 +326,7 @@ to OPA.
 
 This project uses GitHub Actions for CI/CD. The workflow automatically:
 
-- **Validates Go build** with Go 1.25.6
+- **Validates Go build**
 - **Runs tests** with race detection and coverage reporting
 - **Performs code quality checks**:
   - `go vet` - examines Go source code and reports suspicious constructs
