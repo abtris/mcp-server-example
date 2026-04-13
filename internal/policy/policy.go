@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/abtris/mcp-server-2025/pkg/metrics"
+	"github.com/abtris/mcp-server-example/pkg/metrics"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/open-policy-agent/opa/v1/rego"
 )

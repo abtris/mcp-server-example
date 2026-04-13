@@ -85,7 +85,7 @@ go mod tidy
 go run main.go
 
 # Or use the compiled binary
-./mcp-server-2025
+./mcp-server-example
 ```
 
 ### Command Line Options
@@ -128,7 +128,7 @@ The server uses structured logging with `slog` (Go's standard structured logging
 
 **Text format (default):**
 ```bash
-./mcp-server-2025
+./mcp-server-example
 # Output:
 # time=2025-12-05T15:20:24.004+01:00 level=INFO msg="Loading configuration" file=config.json
 # time=2025-12-05T15:20:24.006+01:00 level=INFO msg="Creating MCP server" name=SecureGoMCP version=1.0.0
@@ -136,7 +136,7 @@ The server uses structured logging with `slog` (Go's standard structured logging
 
 **JSON format (for log aggregation):**
 ```bash
-./mcp-server-2025 -log-format json
+./mcp-server-example -log-format json
 # Output:
 # {"time":"2025-12-05T15:21:15.131+01:00","level":"INFO","msg":"Loading configuration","file":"config.json"}
 # {"time":"2025-12-05T15:21:15.133+01:00","level":"INFO","msg":"Creating MCP server","name":"SecureGoMCP","version":"1.0.0"}
@@ -150,13 +150,13 @@ The server uses structured logging with `slog` (Go's standard structured logging
 
 ```bash
 # Only show warnings and errors
-./mcp-server-2025 -log-level warn
+./mcp-server-example -log-level warn
 
 # Show all debug information
-./mcp-server-2025 -log-level debug
+./mcp-server-example -log-level debug
 
 # JSON format with debug level
-./mcp-server-2025 -log-format json -log-level debug
+./mcp-server-example -log-format json -log-level debug
 ```
 
 ## Metrics
@@ -169,7 +169,7 @@ By default, metrics are available at `http://localhost:9090/metrics`. You can ch
 
 ```bash
 # Start server with custom metrics port
-./mcp-server-2025 -metrics-port 8080
+./mcp-server-example -metrics-port 8080
 
 # In another terminal, query metrics
 curl http://localhost:8080/metrics

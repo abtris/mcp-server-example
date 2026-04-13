@@ -1,4 +1,4 @@
-module github.com/abtris/mcp-server-2025
+module github.com/abtris/mcp-server-example
 
 go 1.26
 

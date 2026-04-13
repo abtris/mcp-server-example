@@ -4,7 +4,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/abtris/mcp-server-2025/pkg/metrics"
+	"github.com/abtris/mcp-server-example/pkg/metrics"
 )
 
 var (

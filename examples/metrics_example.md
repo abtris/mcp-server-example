@@ -7,7 +7,7 @@ This example demonstrates how to use the Prometheus metrics endpoint.
 Start the MCP server with metrics enabled:
 
 ```bash
-./mcp-server-2025 -metrics-port 9090
+./mcp-server-example -metrics-port 9090
 ```
 
 The server will:

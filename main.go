@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/abtris/mcp-server-2025/internal/config"
-	"github.com/abtris/mcp-server-2025/internal/mcp_server"
-	"github.com/abtris/mcp-server-2025/internal/policy"
-	"github.com/abtris/mcp-server-2025/pkg/logger"
-	"github.com/abtris/mcp-server-2025/pkg/metrics"
+	"github.com/abtris/mcp-server-example/internal/config"
+	"github.com/abtris/mcp-server-example/internal/mcp_server"
+	"github.com/abtris/mcp-server-example/internal/policy"
+	"github.com/abtris/mcp-server-example/pkg/logger"
+	"github.com/abtris/mcp-server-example/pkg/metrics"
 )
 
 func main() {
