@@ -5,23 +5,32 @@ import future.keywords.in
 
 # Default: Deny everything
 default allow := false
+default deny_reason := null
 
 # ----------------------------------------------------------------
 # POLICY 1: HTTP GET Restrictions
 # ----------------------------------------------------------------
 
 # Whitelist of allowed domains
-allowed_domains := {"example.com", "google.com", "api.internal.corp"}
+allowed_domains := {"example.com", "google.com", "api.internal.corp", "ifconfig.me"}
 
 # Allow http_get ONLY if the domain is in the whitelist
 allow if {
     input.tool == "http_get"
+    url := input.arguments.url
+
+    # Strip scheme if present
+    stripped := trim_prefix(trim_prefix(url, "https://"), "http://")
+
+    # Strip path if present
+    host := split(stripped, "/")[0]
+
     some domain in allowed_domains
-    startswith(input.arguments.url, concat("", ["https://", domain]))
+    host == domain
 }
 
 # Provide a specific reason if blocked
-deny_reason := "URL is not in the allowed whitelist (example.com, google.com)." if {
+deny_reason := "URL is not in the allowed whitelist." if {
     input.tool == "http_get"
     not allow
 }

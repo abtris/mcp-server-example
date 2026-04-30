@@ -209,6 +209,66 @@ histogram_quantile(0.95, rate(mcp_tool_call_duration_seconds_bucket[5m]))
 
 You can create a Grafana dashboard to visualize these metrics. Import the metrics into Prometheus and configure Grafana to query your Prometheus instance.
 
+## Debugging with otelite
+
+[otelite](https://github.com/planetf1/otelite) is a lightweight, single-binary OpenTelemetry receiver with a built-in web dashboard and terminal UI. It stores traces, metrics, and logs in SQLite — no Jaeger, Prometheus, or other infrastructure required.
+
+### Install
+
+```bash
+# macOS (Homebrew)
+brew install planetf1/tap/otelite
+
+# Or with Cargo
+cargo install otelite
+```
+
+### Quick start
+
+Start the otelite server (receives OTLP on ports 4317/4318, dashboard on port 3000):
+
+```bash
+otelite serve
+```
+
+In a separate terminal, run the MCP server (or use the Inspector):
+
+```bash
+go run main.go
+```
+
+Open http://localhost:3000 in your browser to view traces, metrics, and logs.
+
+### CLI and TUI
+
+```bash
+# List recent traces
+otelite traces list
+
+# Show trace details
+otelite traces show <trace-id>
+
+# List recent logs
+otelite logs list --severity ERROR --since 1h
+
+# Search logs
+otelite logs search "policy"
+
+# List metrics
+otelite metrics list
+
+# Launch the terminal UI
+otelite tui
+```
+
+### Overriding the endpoint
+
+By default the MCP server sends OTLP data to `localhost:4318`. To use a different collector, set the standard environment variable:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4320 go run main.go
+```
+
 ## Configuration
 
 ### Server Configuration (`config.json`)

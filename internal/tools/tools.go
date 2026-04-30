@@ -3,6 +3,10 @@ package tools
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -23,9 +27,33 @@ type GetOutput struct {
 
 // SafeGetHandler handles HTTP GET requests with policy enforcement
 func SafeGetHandler(ctx context.Context, req *mcp.CallToolRequest, input GetInput) (*mcp.CallToolResult, GetOutput, error) {
-	// In a real app, you would perform the HTTP request here.
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	url := input.URL
+	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		url = "https://" + url
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, GetOutput{}, fmt.Errorf("invalid URL %q: %w", input.URL, err)
+	}
+	httpReq.Header.Set("Accept", "text/plain, application/json, */*;q=0.1")
+	httpReq.Header.Set("User-Agent", "mcp-server-http-get/1.0")
+
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, GetOutput{}, fmt.Errorf("HTTP GET %q failed: %w", input.URL, err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // 1 MB limit
+	if err != nil {
+		return nil, GetOutput{}, fmt.Errorf("reading response body: %w", err)
+	}
+
 	return nil, GetOutput{
-		Content: fmt.Sprintf("Successfully accessed: %s. (Simulated Content)", input.URL),
+		Content: string(body),
 	}, nil
 }
 
