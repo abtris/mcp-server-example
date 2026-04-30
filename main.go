@@ -14,6 +14,7 @@ import (
 	"github.com/abtris/mcp-server-example/internal/policy"
 	"github.com/abtris/mcp-server-example/pkg/logger"
 	"github.com/abtris/mcp-server-example/pkg/metrics"
+	"github.com/abtris/mcp-server-example/pkg/tracing"
 )
 
 func main() {
@@ -22,7 +23,6 @@ func main() {
 	configFile := flag.String("config", "config.json", "Path to the server configuration file")
 	logFormat := flag.String("log-format", "text", "Log format: text or json")
 	logLevel := flag.String("log-level", "info", "Log level: debug, info, warn, error")
-	metricsPort := flag.Int("metrics-port", 9090, "Port for Prometheus metrics endpoint")
 	flag.Parse()
 
 	// Initialize structured logger
@@ -32,7 +32,36 @@ func main() {
 	})
 	logger.SetDefault(log)
 
-	// Initialize Prometheus metrics
+	// Initialize OpenTelemetry tracing (OTLP/HTTP)
+	tracingCfg := tracing.ConfigFromEnv("mcp-server")
+	tracingShutdown, err := tracing.Init(context.Background(), tracingCfg)
+	if err != nil {
+		slog.Error("Failed to initialize tracing", "error", err)
+		os.Exit(1)
+	}
+
+	// Initialize OpenTelemetry metrics (OTLP/HTTP)
+	meterShutdown, err := tracing.InitMeter(context.Background(), tracingCfg)
+	if err != nil {
+		slog.Error("Failed to initialize OTLP metrics", "error", err)
+		os.Exit(1)
+	}
+
+	// Initialize OpenTelemetry logs (OTLP/HTTP)
+	loggerShutdown, err := tracing.InitLogger(context.Background(), tracingCfg)
+	if err != nil {
+		slog.Error("Failed to initialize OTLP logs", "error", err)
+		os.Exit(1)
+	}
+
+	// Re-create logger with OTel bridge now that LoggerProvider is ready
+	log = logger.NewWithOTel(logger.Config{
+		Format: *logFormat,
+		Level:  *logLevel,
+	}, "mcp-server")
+	logger.SetDefault(log)
+
+	// Initialize OTel metrics (must be after InitMeter so instruments use the real provider)
 	m := metrics.New()
 	slog.Info("Metrics initialized")
 
@@ -51,14 +80,6 @@ func main() {
 		slog.Error("Failed to start policy engine", "error", err)
 		os.Exit(1)
 	}
-
-	// Start metrics HTTP server in background
-	metricsServer := metrics.NewServer(*metricsPort)
-	go func() {
-		if err := metricsServer.Start(); err != nil {
-			slog.Error("Metrics server error", "error", err)
-		}
-	}()
 
 	// Create and configure MCP Server
 	mcp := mcp_server.New(cfg, enforcer, m)
@@ -89,8 +110,16 @@ func main() {
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
 
-		if err := metricsServer.Shutdown(shutdownCtx); err != nil {
-			slog.Error("Error shutting down metrics server", "error", err)
+		if err := loggerShutdown(shutdownCtx); err != nil {
+			slog.Error("Error shutting down OTLP logs", "error", err)
+		}
+
+		if err := meterShutdown(shutdownCtx); err != nil {
+			slog.Error("Error shutting down OTLP metrics", "error", err)
+		}
+
+		if err := tracingShutdown(shutdownCtx); err != nil {
+			slog.Error("Error shutting down tracing", "error", err)
 		}
 
 		slog.Info("Shutdown complete")

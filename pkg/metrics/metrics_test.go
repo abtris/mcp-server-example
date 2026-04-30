@@ -1,52 +1,39 @@
 package metrics
 
 import (
-	"sync"
 	"testing"
 )
 
-var (
-	testMetrics     *Metrics
-	testMetricsOnce sync.Once
-)
-
-func getTestMetrics() *Metrics {
-	testMetricsOnce.Do(func() {
-		testMetrics = New()
-	})
-	return testMetrics
-}
-
 func TestNew(t *testing.T) {
-	m := getTestMetrics()
+	m := New()
 	if m == nil {
 		t.Fatal("Expected non-nil metrics")
 	}
-	if m.TotalRequests == nil {
-		t.Error("Expected TotalRequests to be initialized")
+	if m.totalRequests == nil {
+		t.Error("Expected totalRequests to be initialized")
 	}
-	if m.ToolCalls == nil {
-		t.Error("Expected ToolCalls to be initialized")
+	if m.toolCalls == nil {
+		t.Error("Expected toolCalls to be initialized")
 	}
-	if m.PolicyEvaluations == nil {
-		t.Error("Expected PolicyEvaluations to be initialized")
+	if m.policyEvaluations == nil {
+		t.Error("Expected policyEvaluations to be initialized")
 	}
 }
 
 func TestRecordRequest(t *testing.T) {
-	m := getTestMetrics()
+	m := New()
 	m.RecordRequest()
 	// No panic means success
 }
 
 func TestRecordToolCall(t *testing.T) {
-	m := getTestMetrics()
+	m := New()
 	m.RecordToolCall("test_tool")
 	// No panic means success
 }
 
 func TestRecordPolicyEvaluation(t *testing.T) {
-	m := getTestMetrics()
+	m := New()
 
 	// Test allowed
 	m.RecordPolicyEvaluation("test_tool", true, "", 0.001)
@@ -58,13 +45,13 @@ func TestRecordPolicyEvaluation(t *testing.T) {
 }
 
 func TestRecordPolicyError(t *testing.T) {
-	m := getTestMetrics()
+	m := New()
 	m.RecordPolicyError()
 	// No panic means success
 }
 
 func TestRecordToolDuration(t *testing.T) {
-	m := getTestMetrics()
+	m := New()
 	m.RecordToolDuration("test_tool", 0.5)
 	// No panic means success
 }

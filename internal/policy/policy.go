@@ -9,8 +9,12 @@ import (
 	"time"
 
 	"github.com/abtris/mcp-server-example/pkg/metrics"
+	"github.com/abtris/mcp-server-example/pkg/tracing"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/open-policy-agent/opa/v1/rego"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Enforcer wraps the OPA policy engine for evaluating tool access
@@ -56,6 +60,27 @@ func Enforce[In any, Out any](
 ) func(context.Context, *mcp.CallToolRequest, In) (*mcp.CallToolResult, Out, error) {
 
 	return func(ctx context.Context, request *mcp.CallToolRequest, input In) (*mcp.CallToolResult, Out, error) {
+		tracer := tracing.Tracer("mcp-server")
+		ctx, span := tracer.Start(ctx, "tool-call/"+toolName,
+			trace.WithAttributes(attribute.String("mcp.tool", toolName)),
+		)
+		defer func() {
+			span.End()
+			slog.Info("Tracing span ended, queued for export",
+				"tool", toolName,
+				"trace_id", span.SpanContext().TraceID().String(),
+			)
+		}()
+
+		sc := span.SpanContext()
+		slog.Info("Tracing span started",
+			"tool", toolName,
+			"trace_id", sc.TraceID().String(),
+			"span_id", sc.SpanID().String(),
+			"is_recording", span.IsRecording(),
+			"is_valid", sc.IsValid(),
+		)
+
 		var zeroOut Out // Zero value for Output to return on blocked requests
 
 		// Record the request
@@ -81,12 +106,21 @@ func Enforce[In any, Out any](
 		}
 
 		// 2. Evaluate Policy
+		_, policySpan := tracer.Start(ctx, "policy-evaluation",
+			trace.WithAttributes(attribute.String("mcp.tool", toolName)),
+		)
 		startTime := time.Now()
 		results, err := pe.query.Eval(ctx, rego.EvalInput(opaInput))
 		evalDuration := time.Since(startTime)
+		policySpan.SetAttributes(
+			attribute.Float64("policy.duration_ms", float64(evalDuration.Milliseconds())),
+		)
 
 		if err != nil {
 			// Fail closed if policy engine fails
+			policySpan.SetStatus(codes.Error, err.Error())
+			policySpan.End()
+			span.SetStatus(codes.Error, "policy engine error")
 			if pe.metrics != nil {
 				pe.metrics.RecordPolicyError()
 			}
@@ -95,6 +129,9 @@ func Enforce[In any, Out any](
 		}
 
 		if len(results) == 0 {
+			policySpan.SetStatus(codes.Error, "no results")
+			policySpan.End()
+			span.SetStatus(codes.Error, "policy engine returned no results")
 			if pe.metrics != nil {
 				pe.metrics.RecordPolicyError()
 			}
@@ -112,6 +149,14 @@ func Enforce[In any, Out any](
 				reason = fmt.Sprintf("Blocked: %v", r)
 			}
 
+			policySpan.SetAttributes(
+				attribute.Bool("policy.allowed", false),
+				attribute.String("policy.deny_reason", reason),
+			)
+			policySpan.SetStatus(codes.Error, "denied")
+			policySpan.End()
+			span.SetStatus(codes.Error, "policy denied")
+
 			// Record policy denial
 			if pe.metrics != nil {
 				pe.metrics.RecordPolicyEvaluation(toolName, false, reason, evalDuration.Seconds())
@@ -123,6 +168,9 @@ func Enforce[In any, Out any](
 			return ErrorResult(reason), zeroOut, nil
 		}
 
+		policySpan.SetAttributes(attribute.Bool("policy.allowed", true))
+		policySpan.End()
+
 		// Record policy approval
 		if pe.metrics != nil {
 			pe.metrics.RecordPolicyEvaluation(toolName, true, "", evalDuration.Seconds())
@@ -131,9 +179,18 @@ func Enforce[In any, Out any](
 		slog.Info("Policy allowed action", "tool", toolName)
 
 		// 4. If Allowed, execute the actual tool logic
+		ctx, toolSpan := tracer.Start(ctx, "tool-execute/"+toolName)
 		toolStartTime := time.Now()
 		result, output, err := handler(ctx, request, input)
 		toolDuration := time.Since(toolStartTime)
+		toolSpan.SetAttributes(
+			attribute.Float64("tool.duration_ms", float64(toolDuration.Milliseconds())),
+		)
+		if err != nil {
+			toolSpan.SetStatus(codes.Error, err.Error())
+			span.SetStatus(codes.Error, "tool execution error")
+		}
+		toolSpan.End()
 
 		if pe.metrics != nil {
 			pe.metrics.RecordToolDuration(toolName, toolDuration.Seconds())
