@@ -13,6 +13,11 @@
       "name": "echo",
       "description": "Echo a message back.",
       "handler": "echo"
+    },
+    {
+      "name": "my_ip",
+      "description": "Return the caller's public IP address (via ifconfig.me).",
+      "handler": "my_ip"
     }
   ]
 }

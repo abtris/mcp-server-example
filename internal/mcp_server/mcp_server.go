@@ -52,6 +52,11 @@ func (s *MCPServer) RegisterTools() {
 				Name:        tool.Name,
 				Description: tool.Description,
 			}, policy.Enforce(s.enforcer, tool.Name, tools.EchoHandler))
+		case "my_ip":
+			mcp.AddTool(s.mcp, &mcp.Tool{
+				Name:        tool.Name,
+				Description: tool.Description,
+			}, policy.Enforce(s.enforcer, tool.Name, tools.MyIPHandler))
 		default:
 			slog.Warn("Unknown handler, skipping tool", "handler", tool.Handler, "tool", tool.Name)
 		}

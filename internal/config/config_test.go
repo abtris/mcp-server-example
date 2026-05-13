@@ -20,8 +20,8 @@ func TestLoad_ValidFile(t *testing.T) {
 		t.Errorf("Expected server version '1.0.0', got '%s'", cfg.Server.Version)
 	}
 
-	if len(cfg.Tools) != 2 {
-		t.Errorf("Expected 2 tools, got %d", len(cfg.Tools))
+	if len(cfg.Tools) != 3 {
+		t.Errorf("Expected 3 tools, got %d", len(cfg.Tools))
 	}
 }
 

@@ -58,3 +58,12 @@ deny_reason := "Content contains prohibited keywords." if {
     input.tool == "echo"
     has_prohibited_content
 }
+
+# ----------------------------------------------------------------
+# POLICY 3: my_ip
+# ----------------------------------------------------------------
+
+# Always allow my_ip — it takes no arguments and only reads the caller's public IP.
+allow if {
+    input.tool == "my_ip"
+}

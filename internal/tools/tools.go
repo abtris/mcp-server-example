@@ -77,3 +77,40 @@ func EchoHandler(ctx context.Context, req *mcp.CallToolRequest, input EchoInput)
 		Response: fmt.Sprintf("Echo: %s", input.Message),
 	}, nil
 }
+
+// ---------------------------------------------------------
+// My IP Tool
+// ---------------------------------------------------------
+
+// MyIPInput defines the input schema for the my_ip tool (no arguments)
+type MyIPInput struct{}
+
+// MyIPOutput defines the output schema for the my_ip tool
+type MyIPOutput struct {
+	IP string `json:"ip"`
+}
+
+// MyIPHandler returns the caller's public IP address as reported by ifconfig.me
+func MyIPHandler(ctx context.Context, req *mcp.CallToolRequest, input MyIPInput) (*mcp.CallToolResult, MyIPOutput, error) {
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://ifconfig.me", nil)
+	if err != nil {
+		return nil, MyIPOutput{}, fmt.Errorf("build request: %w", err)
+	}
+	httpReq.Header.Set("Accept", "text/plain")
+	httpReq.Header.Set("User-Agent", "curl/8.0")
+
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, MyIPOutput{}, fmt.Errorf("fetch ifconfig.me: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024))
+	if err != nil {
+		return nil, MyIPOutput{}, fmt.Errorf("read response: %w", err)
+	}
+
+	return nil, MyIPOutput{IP: strings.TrimSpace(string(body))}, nil
+}
