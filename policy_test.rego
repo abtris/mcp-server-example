@@ -19,7 +19,7 @@ test_deny_http_get_non_whitelisted_domain if {
         "arguments": {"url": "https://malicious.com"}
     }
 
-    deny_reason == "URL is not in the allowed whitelist (example.com, google.com)." with input as {
+    deny_reason == "URL is not in the allowed whitelist." with input as {
         "tool": "http_get",
         "arguments": {"url": "https://malicious.com"}
     }
