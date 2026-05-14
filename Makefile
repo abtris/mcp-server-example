@@ -62,7 +62,7 @@ test-opa:
 inspect:
 	npx @modelcontextprotocol/inspector go run main.go
 
-## OTEL
+## OTEL: run otelite server for inspect metrics, traces and logs
 otel:
 	otelite serve
 
