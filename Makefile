@@ -62,6 +62,10 @@ test-opa:
 inspect:
 	npx @modelcontextprotocol/inspector go run main.go
 
+## OTEL
+otel:
+	otelite serve
+
 ## help: list available targets
 help:
 	@grep -E '^##' Makefile | sed 's/^## //'
