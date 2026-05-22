@@ -3,7 +3,7 @@ module github.com/abtris/mcp-server-example
 go 1.26
 
 require (
-	github.com/modelcontextprotocol/go-sdk v1.6.0
+	github.com/modelcontextprotocol/go-sdk v1.6.1
 	github.com/open-policy-agent/opa v1.16.2
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opentelemetry.io/contrib/bridges/otelslog v0.18.0
