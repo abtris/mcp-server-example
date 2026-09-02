@@ -3,7 +3,7 @@ module github.com/abtris/mcp-server-example
 go 1.26
 
 require (
-	github.com/modelcontextprotocol/go-sdk v1.6.1
+	github.com/modelcontextprotocol/go-sdk v1.7.0
 	github.com/open-policy-agent/opa v1.17.1
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opentelemetry.io/contrib/bridges/otelslog v0.19.0
@@ -60,6 +60,7 @@ require (
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.38.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260610212136-7ab31c22f7ad // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260610212136-7ab31c22f7ad // indirect
 	google.golang.org/grpc v1.82.1 // indirect
