@@ -2,5 +2,34 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>abtris/renovate-config"
+  ],
+  "platformAutomerge": false,
+  "ignoreTests": false,
+  "pinDigests": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "minimumReleaseAge": "0 days"
+  },
+  "packageRules": [
+    {
+      "description": "Include indirect Go dependencies in maintenance updates",
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["indirect"],
+      "enabled": true
+    },
+    {
+      "description": "Upgrade OTel APIs, SDKs, exporters, and bridges together to avoid incompatible log APIs",
+      "matchPackageNames": ["/^go\\.opentelemetry\\.io\\//"],
+      "groupName": "OpenTelemetry",
+      "separateMajorMinor": false,
+      "separateMinorPatch": false,
+      "automerge": true
+    },
+    {
+      "description": "Automerge Go compiler updates after checks pass",
+      "matchDatasources": ["golang-version"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    }
   ]
 }
